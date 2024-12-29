@@ -34,6 +34,10 @@
 
 // ---------------------------------------------- functions ---------------------------------------
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief Arduino setup function is only called once at startup. Do all the HW initialisation stuff here.
  * @param logLevelIdx ...  the log level index to be used (0..7 -> see logLevels array in tmf8828_app.cpp)
  * @param  baudrate ... for the serial input the baudrate
@@ -50,5 +54,9 @@ int8_t loopFn( );
 /** @brief Arduino terminate function is only called once when exit key 'q' is pressed. Write a message and wait for shutdown of arduino.
  */
 void terminateFn( );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // TMF8828_APP_H

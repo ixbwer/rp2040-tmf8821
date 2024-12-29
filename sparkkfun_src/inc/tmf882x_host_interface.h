@@ -1,10 +1,14 @@
 /*
  *****************************************************************************
- * Copyright by ams OSRAM AG                                                       *
+ * Copyright by ams AG                                                       *
  * All rights are reserved.                                                  *
  *                                                                           *
  * IMPORTANT - PLEASE READ CAREFULLY BEFORE COPYING, INSTALLING OR USING     *
  * THE SOFTWARE.                                                             *
+ *                                                                           *
+ * THIS SOFTWARE IS PROVIDED FOR USE ONLY IN CONJUNCTION WITH AMS PRODUCTS.  *
+ * USE OF THE SOFTWARE IN CONJUNCTION WITH NON-AMS-PRODUCTS IS EXPLICITLY    *
+ * EXCLUDED.                                                                 *
  *                                                                           *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       *
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         *
@@ -20,13 +24,16 @@
  *****************************************************************************
  */
 
-#ifndef TMF882X_CALIB_H
-#define TMF882X_CALIB_H
+/** @file tmf882x_host_interface.h
+ *
+ *  TMF882X host interface
+ */
 
-#include "tmf8828_shim.h"
 
-extern const  uint8_t tmf882x_calib_0[];
-extern const  uint8_t tmf882x_calib_1[];
-extern const  uint8_t tmf882x_calib_2[];
+#ifndef __TMF882X_HOST_INTERFACE_H
+#define __TMF882X_HOST_INTERFACE_H
 
-#endif /* TMF882X_CALIB_H */
+//#include "platform_shim.h"
+
+#include "sfe_shim.h"
+#endif

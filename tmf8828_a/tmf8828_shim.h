@@ -31,9 +31,14 @@
 // ---------------------------------------------- includes ----------------------------------------
 
 #include <stdint.h>
-#include <avr/pgmspace.h>
-#include <Arduino.h>
-
+// #include <avr/pgmspace.h>
+// #include <Arduino.h>
+#include <stdio.h>
+#include <string.h>
+#include "pico/stdlib.h"
+#include "hardware/i2c.h"
+#include "hardware/gpio.h"
+#include "hardware/irq.h"
 
 #if defined( __cplusplus)
 extern "C"
@@ -44,8 +49,8 @@ extern "C"
 
 #define ARDUINO_MAX_I2C_TRANSFER                  32    /**< Arduino Uno can only handle up to 32 bytes in a single i2c tx/rx */
 
-#define ENABLE_PIN                                6     /**< on the arduino uno the enable pin is connected to digital 6 */
-#define INTERRUPT_PIN                             7     /**< interupt to digital 7 */
+#define ENABLE_PIN                                7     /**< on the arduino uno the enable pin is connected to digital 6 */
+#define INTERRUPT_PIN                             9     /**< interupt to digital 7 */
 
 // for 2nd tmf8828 on the arduino uno the alternate enable pin is connected to digital 4, alternate interrupt to digital 5
 #define ALT_ENABLE_PIN                            4
@@ -71,7 +76,7 @@ extern "C"
 #define PRINT_INT(i)                          printInt( i )
 #define PRINT_UINT(i)                         printUint( i )
 #define PRINT_UINT_HEX(i)                     printUintHex( i )
-#define PRINT_STR(str)                        printStr( str )  
+#define PRINT_STR(str)                        printStr((char *) str )  
 #define PRINT_CONST_STR(str)                  printConstStr( (const char *)str )  
 #define PRINT_LN()                            printLn( )
 

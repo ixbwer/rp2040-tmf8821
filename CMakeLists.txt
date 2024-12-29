@@ -12,29 +12,24 @@ if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
 # ====================================================================================
-set(PICO_BOARD pico CACHE STRING "Board type")
 
+set(PICO_BOARD pico CACHE STRING "Board type")
 cmake_minimum_required(VERSION 3.13)
 
+file(GLOB TMF8828_A_FILES "tmf8828_a/*")
 add_executable(hello
-hello.c
+    hello.c
+    ${TMF8828_A_FILES}
 )
-target_link_libraries(hello pico_stdlib)
 
-# create map/bin/hex/uf2 file in addition to ELF.
-
-
+include_directories(tmf8828_a)
+target_link_libraries(hello pico_stdlib hardware_i2c)
 # set PICO_SDK_PATH
 set(PICO_SDK_PATH "D:/Repo/pico-sdk")
-
-# initialize the SDK based on PICO_SDK_PATH
-# note: this must happen before project()
 include(pico_sdk_import.cmake)
 
-project(hello)
-
-# initialize the Raspberry Pi Pico SDK
+project(hello C CXX ASM)
 pico_sdk_init()
+pico_enable_stdio_usb(hello 1)
+pico_enable_stdio_uart(hello 0)
 pico_add_extra_outputs(hello)
-
-# rest of your project

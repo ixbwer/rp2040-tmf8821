@@ -140,11 +140,11 @@ void changeI2CAddress ( )
     }
     if ( tmf8828ChangeI2CAddress( &(tmf8828[0]), newAddr ) != APP_SUCCESS_OK )
     {
-      PRINT_CONST_STR( F(  "#Err" ) );
+      PRINT_CONST_STR( (  "#Err" ) );
       PRINT_CHAR( SEPARATOR );    
     }
   }
-  PRINT_CONST_STR( F(  "I2C Addr=" ) );
+  PRINT_CONST_STR( (  "I2C Addr=" ) );
   PRINT_INT( tmf8828[0].i2cSlaveAddress );
   PRINT_LN( );
 }
@@ -154,7 +154,7 @@ void clockCorrection ( )
 {
   clkCorrectionOn = !clkCorrectionOn;       // toggle clock correction on/off  
   tmf8828ClkCorrection( &(tmf8828[0]), clkCorrectionOn );
-  PRINT_CONST_STR( F(  "Clk corr is " ) );
+  PRINT_CONST_STR( (  "Clk corr is " ) );
   PRINT_INT( clkCorrectionOn );
   PRINT_LN( );
 }
@@ -164,24 +164,24 @@ void configure ( )
 {
   if ( tmf8828Configure( &(tmf8828[0]), configPeriod[modeIsTmf8828][configNr], configKiloIter[modeIsTmf8828][configNr], configSpadId[modeIsTmf8828][configNr], configLowThreshold, configHighThreshold, configPersistance[persistenceNr], configInterruptMask, dumpHistogramOn ) == APP_SUCCESS_OK )
   {
-    PRINT_CONST_STR( F(  "#Conf" ) );
+    PRINT_CONST_STR( (  "#Conf" ) );
     PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( F(  "Period=" ) );
+    PRINT_CONST_STR( (  "Period=" ) );
     PRINT_INT( configPeriod[modeIsTmf8828][configNr] );
-    PRINT_CONST_STR( F(  "ms" ) );
+    PRINT_CONST_STR( (  "ms" ) );
     PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( F(  "KIter=" ) );
+    PRINT_CONST_STR( (  "KIter=" ) );
     PRINT_INT( configKiloIter[modeIsTmf8828][configNr] );
-    PRINT_CONST_STR( F(  " SPAD=" ) );
+    PRINT_CONST_STR( (  " SPAD=" ) );
     PRINT_INT( configSpadId[modeIsTmf8828][configNr] );
-    PRINT_CONST_STR( F(  " Pers=" ) );
+    PRINT_CONST_STR( (  " Pers=" ) );
     PRINT_INT( configPersistance[persistenceNr] );
    }
   else
   {
-    PRINT_CONST_STR( F(  "#Err" ) );
+    PRINT_CONST_STR( (  "#Err" ) );
     PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( F(  "Config" ) );
+    PRINT_CONST_STR( (  "Config" ) );
   }
   PRINT_LN( );
 }
@@ -198,9 +198,10 @@ void enable ( uint32_t imageStartAddress, const unsigned char * image, int32_t i
     tmf8828Wakeup( &(tmf8828[0]) );
     if ( tmf8828IsCpuReady( &(tmf8828[0]), CPU_READY_TIME_MS ) )
     {
+      printf( " is cpu ready\n" );
       if ( tmf8828DownloadFirmware( &(tmf8828[0]), imageStartAddress, image, imageSizeInBytes ) == BL_SUCCESS_OK ) 
       {
-        PRINT_CONST_STR( F( " DWNL" ) );
+        PRINT_CONST_STR( ( " DWNL" ) );
         PRINT_LN( );
         resetAppState();
         setMode( );
@@ -222,6 +223,7 @@ void enable ( uint32_t imageStartAddress, const unsigned char * image, int32_t i
   } // else device is already enabled
   else
   {
+    printf( " not cpu ready\n" );
     tmf8828ReadDeviceInfo( &(tmf8828[0]) );
     printDeviceInfo( );
   }
@@ -232,7 +234,7 @@ void factoryCalibration ( )
 {
   if ( stateTmf8828 == TMF8828_STATE_STOPPED )
   {
-    PRINT_CONST_STR( F(  "Fact Cal" ) );
+    PRINT_CONST_STR( (  "Fact Cal" ) );
     PRINT_LN( );
     tmf8828Configure( &(tmf8828[0]), 1, 4000, configSpadId[modeIsTmf8828][configNr], 0, 0xffff, 0, 0x3ffff, 0 );    // no histogram dumping in factory calibration allowed, 4M iterations for factory calibration recommended
     if ( modeIsTmf8828 )
@@ -256,9 +258,9 @@ void factoryCalibration ( )
         return;
       }
     }
-    PRINT_CONST_STR( F(  "#Err" ) );
+    PRINT_CONST_STR( (  "#Err" ) );
     PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( F(  "fact calib" ) );
+    PRINT_CONST_STR( (  "fact calib" ) );
     PRINT_LN( );
   }
 }
@@ -274,7 +276,7 @@ void histogramDumping ( )
       dumpHistogramOn = 0; // is off again
     }
     configure( );
-    PRINT_CONST_STR( F(  "Histogram is " ) );
+    PRINT_CONST_STR( (  "Histogram is " ) );
     PRINT_INT( dumpHistogramOn );
     PRINT_LN( );
   }
@@ -353,7 +355,7 @@ void logLevelDec ( )
     logLevelIdx--;
     tmf8828SetLogLevel( &(tmf8828[0]), logLevels[ logLevelIdx ] );
   }
-  PRINT_CONST_STR( F(  "Log=" ) );
+  PRINT_CONST_STR( (  "Log=" ) );
   PRINT_INT( logLevels[ logLevelIdx ] );
   PRINT_LN( );
 }
@@ -366,7 +368,7 @@ void logLevelInc ( )
     logLevelIdx++;
     tmf8828SetLogLevel( &(tmf8828[0]), logLevels[ logLevelIdx ] );
   }
-  PRINT_CONST_STR( F(  "Log=" ) );
+  PRINT_CONST_STR( (  "Log=" ) );
   PRINT_INT( logLevels[ logLevelIdx ] );
   PRINT_LN( );
 }
@@ -418,7 +420,7 @@ void reset ( )
   if ( stateTmf8828 != TMF8828_STATE_DISABLED )
   {
     tmf8828Reset( &(tmf8828[0]) );
-    PRINT_CONST_STR( F(  "Reset TMF8828" ) );
+    PRINT_CONST_STR( (  "Reset TMF8828" ) );
     PRINT_LN( );
     stateTmf8828 = TMF8828_STATE_STOPPED;
     setMode();        
@@ -439,20 +441,20 @@ void restoreFactoryCalibration ( )
          && APP_SUCCESS_OK == tmf8828SetStoredFactoryCalibration( &(tmf8828[0]), getPrecollectedFactoryCalibration( 3 ) )
          )             
       {   
-        PRINT_CONST_STR( F(  "Set fact cal" ) );
+        PRINT_CONST_STR( (  "Set fact cal" ) );
         PRINT_LN( );
         return;
       }
     }
     else if ( APP_SUCCESS_OK == tmf8828SetStoredFactoryCalibration( &(tmf8828[0]), getPrecollectedFactoryCalibration( configNr ) ) )
     {   
-      PRINT_CONST_STR( F(  "Set fact cal" ) );
+      PRINT_CONST_STR( (  "Set fact cal" ) );
       PRINT_LN( );
       return;
     }
-    PRINT_CONST_STR( F(  "#Err" ) );
+    PRINT_CONST_STR( (  "#Err" ) );
     PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( F(  "loadCal" ) );  
+    PRINT_CONST_STR( (  "loadCal" ) );  
     PRINT_LN( );
   }
 }
@@ -471,9 +473,9 @@ void setMode ( )
   }
   if ( APP_SUCCESS_OK != res )
   {
-    PRINT_CONST_STR( F(  "#Err" ) );
+    PRINT_CONST_STR( (  "#Err" ) );
     PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( F(  "mode switch to" ) );
+    PRINT_CONST_STR( (  "mode switch to" ) );
     PRINT_CHAR( SEPARATOR );
     PRINT_INT( modeIsTmf8828 );
     PRINT_LN( );
@@ -529,21 +531,21 @@ void printState ( )
 {
   if ( modeIsTmf8828 )
   {
-    PRINT_CONST_STR( F(  "TMF8828" ) );
+    PRINT_CONST_STR( (  "TMF8828" ) );
   }
   else
   {
-    PRINT_CONST_STR( F(  "TMF882x" ) );
+    PRINT_CONST_STR( (  "TMF882x" ) );
   }
-  PRINT_CONST_STR( F(  " state=" ) );
+  PRINT_CONST_STR( (  " state=" ) );
   switch ( stateTmf8828 )
   {
-    case TMF8828_STATE_DISABLED: PRINT_CONST_STR( F(  "disabled" ) ); break;
-    case TMF8828_STATE_STANDBY: PRINT_CONST_STR( F(  "standby" ) ); break;
-    case TMF8828_STATE_STOPPED: PRINT_CONST_STR( F(  "stopped" ) ); break;
-    case TMF8828_STATE_MEASURE: PRINT_CONST_STR( F(  "measure" ) ); break;
-    case TMF8828_STATE_ERROR: PRINT_CONST_STR( F(  "error" ) ); break;   
-    default: PRINT_CONST_STR( F(  "???" ) ); break;
+    case TMF8828_STATE_DISABLED: PRINT_CONST_STR( (  "disabled" ) ); break;
+    case TMF8828_STATE_STANDBY: PRINT_CONST_STR( (  "standby" ) ); break;
+    case TMF8828_STATE_STOPPED: PRINT_CONST_STR( (  "stopped" ) ); break;
+    case TMF8828_STATE_MEASURE: PRINT_CONST_STR( (  "measure" ) ); break;
+    case TMF8828_STATE_ERROR: PRINT_CONST_STR( (  "error" ) ); break;   
+    default: PRINT_CONST_STR( (  "???" ) ); break;
   }
   PRINT_LN( );
 }
@@ -560,14 +562,14 @@ void printRegisters ( uint8_t regAddr, uint16_t len, char seperator, uint8_t cal
     {
       if ( modeIsTmf8828 )
       {
-        PRINT_CONST_STR( F(  "const PROGMEM uint8_t tmf8828_calib_" ) );    // different name for tmf8828
+        PRINT_CONST_STR( (  "const  uint8_t tmf8828_calib_" ) );    // different name for tmf8828
       }
       else
       {
-        PRINT_CONST_STR( F(  "const PROGMEM uint8_t tmf882x_calib_" ) );    // different name for tmf882x
+        PRINT_CONST_STR( (  "const  uint8_t tmf882x_calib_" ) );    // different name for tmf882x
       }
       PRINT_INT( calibId );
-      PRINT_CONST_STR( F(  "[] = {" ) );
+      PRINT_CONST_STR( (  "[] = {" ) );
       PRINT_LN( );
     }
     for ( i = 0; i < len; i += NR_REGS_PER_LINE )            // if len is not a multiple of 8, we will print a bit more registers ....
@@ -576,20 +578,20 @@ void printRegisters ( uint8_t regAddr, uint16_t len, char seperator, uint8_t cal
       i2cRxReg( &(tmf8828[0]), tmf8828[0].i2cSlaveAddress, regAddr, NR_REGS_PER_LINE, buf );
       if ( seperator == ' ' )
       {
-        PRINT_CONST_STR( F(  "0x" ) );
+        PRINT_CONST_STR( (  "0x" ) );
         PRINT_UINT_HEX( regAddr );
-        PRINT_CONST_STR( F(  ": " ) );
+        PRINT_CONST_STR( (  ": " ) );
       }
       for ( j = 0; j < NR_REGS_PER_LINE; j++ )
       {
-        PRINT_CONST_STR( F(  " 0x" ) ); PRINT_UINT_HEX( *ptr++ ); PRINT_CHAR( seperator ); 
+        PRINT_CONST_STR( (  " 0x" ) ); PRINT_UINT_HEX( *ptr++ ); PRINT_CHAR( seperator ); 
       }
       PRINT_LN( );
       regAddr = regAddr + 8;
     }
     if ( seperator == ',' )
     {
-      PRINT_CONST_STR( F(  "};" ) );
+      PRINT_CONST_STR( (  "};" ) );
       PRINT_LN( );
     }
   }
@@ -601,18 +603,18 @@ void printRegisters ( uint8_t regAddr, uint16_t len, char seperator, uint8_t cal
 
 void printDeviceInfo ( )
 {
-  PRINT_CONST_STR( F(  "Driver " ) );
+  PRINT_CONST_STR( (  "Driver " ) );
   PRINT_INT( tmf8828[0].info.version[0] ); PRINT_CHAR( '.' );
   PRINT_INT( tmf8828[0].info.version[1] ); 
-  PRINT_CONST_STR( F(  " FW " ) );
+  PRINT_CONST_STR( (  " FW " ) );
   PRINT_INT( tmf8828[0].device.appVersion[0] ); PRINT_CHAR( '.' );
   PRINT_INT( tmf8828[0].device.appVersion[1] ); PRINT_CHAR( '.' );
   PRINT_INT( tmf8828[0].device.appVersion[2] ); PRINT_CHAR( '.' );
   PRINT_INT( tmf8828[0].device.appVersion[3] ); PRINT_CHAR( '.' );
-  PRINT_CONST_STR( F(  " Chip " ) );
+  PRINT_CONST_STR( (  " Chip " ) );
   PRINT_INT( tmf8828[0].device.chipVersion[0] ); PRINT_CHAR( '.' );
   PRINT_INT( tmf8828[0].device.chipVersion[1] ); 
-  PRINT_CONST_STR( F(  " Serial 0x" ) );
+  PRINT_CONST_STR( (  " Serial 0x" ) );
   PRINT_UINT_HEX( tmf8828[0].device.deviceSerialNumber );
   PRINT_LN( );
 }
@@ -620,29 +622,29 @@ void printDeviceInfo ( )
 // Function prints a help screen
 void printHelp ( )
 {
-  PRINT_CONST_STR( F(  "TMF8828 Arduino Driver" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "UART commands" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "a ... dump registers" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "c ... next configuration" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "d ... disable device" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "e ... enable device and download TMF8828 FW" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "E ... enable device and download TMF8821 FW" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "f ... do fact calib" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "h ... help " ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "i ... i2c addr. change" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "l ... load fact calib" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "m ... measure" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "o ... toggle between TMF8828 and TMF882X" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "p ... power down" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "r ... restore fact calib from file" ) );  
-  PRINT_LN( ); PRINT_CONST_STR( F(  "s ... stop measure" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "t ... next persistance set" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "w ... wakeup" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "x ... clock corr on/off" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "z ... histogram" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "+ ... log+" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "- ... log-" ) );
-  PRINT_LN( ); PRINT_CONST_STR( F(  "# ... reset" ) );
+  PRINT_CONST_STR( (  "TMF8828 Arduino Driver" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "UART commands" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "a ... dump registers" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "c ... next configuration" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "d ... disable device" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "e ... enable device and download TMF8828 FW" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "E ... enable device and download TMF8821 FW" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "f ... do fact calib" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "h ... help " ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "i ... i2c addr. change" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "l ... load fact calib" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "m ... measure" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "o ... toggle between TMF8828 and TMF882X" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "p ... power down" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "r ... restore fact calib from file" ) );  
+  PRINT_LN( ); PRINT_CONST_STR( (  "s ... stop measure" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "t ... next persistance set" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "w ... wakeup" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "x ... clock corr on/off" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "z ... histogram" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "+ ... log+" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "- ... log-" ) );
+  PRINT_LN( ); PRINT_CONST_STR( (  "# ... reset" ) );
   PRINT_LN( ); 
 }
 
@@ -660,6 +662,7 @@ int8_t serialInput ( )
     }
     else
     { 
+      printf("Received: %c\n", rx);
       if ( rx == 'h' )
       {
         printHelp(); 
@@ -755,9 +758,9 @@ int8_t serialInput ( )
       }
       else 
       {
-        PRINT_CONST_STR( F(  "#Err" ) );
+        PRINT_CONST_STR( (  "#Err" ) );
         PRINT_CHAR( SEPARATOR );
-        PRINT_CONST_STR( F(  "Cmd " ) );
+        PRINT_CONST_STR( (  "Cmd " ) );
         PRINT_CHAR( rx );
         PRINT_LN( );
       }
@@ -839,13 +842,13 @@ int8_t loopFn ( )
     tmf8828StopMeasurement( &(tmf8828[0]) );
     tmf8828DisableInterrupts( &(tmf8828[0]), 0xFF );
     stateTmf8828 = TMF8828_STATE_STOPPED;
-    PRINT_CONST_STR( F(  "#Err" ) );
+    PRINT_CONST_STR( (  "#Err" ) );
     PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( F(  "inter" ) );
+    PRINT_CONST_STR( (  "inter" ) );
     PRINT_CHAR( SEPARATOR );
     PRINT_INT( intStatus );
     PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( F(  "but no data" ) );
+    PRINT_CONST_STR( (  "but no data" ) );
     PRINT_LN( );
   }
   return exit;

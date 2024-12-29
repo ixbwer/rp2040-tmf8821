@@ -22,90 +22,96 @@
 
 #include "tmf8828_shim.h"
 #include "tmf8828.h"
-#include "Arduino.h"
-#include <Wire.h>
 
 
 void delayInMicroseconds ( uint32_t wait )
 {
-  delayMicroseconds( wait );
+    sleep_ms( wait );
 }
 
 uint32_t getSysTick ( )
 {
-  return micros( );
+  //return 0;
+  return (uint32_t) get_absolute_time();
 }
 
 uint8_t readProgramMemoryByte ( const uint8_t * ptr )
 {
   uint32_t address = (uint32_t)ptr;
-  return pgm_read_byte( address );
+  //return pgm_read_byte( address );
 }
 
 void enablePinHigh ( void * dptr )
 {
   (void)dptr; // not used here
-  digitalWrite( ENABLE_PIN, HIGH );  
+  gpio_put(ENABLE_PIN, true);
 }
 
 void enablePinLow ( void * dptr )
 {
   (void)dptr; // not used here
-  digitalWrite( ENABLE_PIN, LOW );   
+  gpio_put(ENABLE_PIN, false);
 }
 
 void configurePins ( void * dptr )
 {
   (void)dptr; // not used here
   // configure ENABLE pin and interupt pin
-  pinOutput( ENABLE_PIN );
-  pinInput( INTERRUPT_PIN );
-  pinInput( TRIGGER_INTERRUPT_PIN );                 // if interrupt PIN is used
+  gpio_init(ENABLE_PIN);
+  gpio_set_dir(ENABLE_PIN, GPIO_OUT);
+  gpio_init(INTERRUPT_PIN);
+  gpio_set_dir(INTERRUPT_PIN, GPIO_IN);
+  gpio_pull_up(INTERRUPT_PIN);
+  gpio_init(TRIGGER_INTERRUPT_PIN);           // if interrupt PIN is used        
 }
 
 
 void i2cOpen ( void * dptr, uint32_t i2cClockSpeedInHz )
 {
   (void)dptr; // not used here
-  Wire.begin( );
-  Wire.setClock( i2cClockSpeedInHz );
+  i2c_init(i2c0,i2cClockSpeedInHz);
+  gpio_set_function(16, GPIO_FUNC_I2C);
+  gpio_set_function(17, GPIO_FUNC_I2C);
+  gpio_pull_up(16);
+  gpio_pull_up(17);
 }
 
 void i2cClose ( void * dptr )
 {
   (void)dptr; // not used here
-  Wire.end( );
+  i2c_deinit(i2c0);
 }
 
 
 void printChar ( char c ) 
 {
-  Serial.print( c );
+   printf("%c", c);
 }
 
 void printInt ( int32_t i )
 {
-  Serial.print( i, DEC );
+    printf("%d", i);
 }
 
 void printUint ( uint32_t i )
 {
-  Serial.print( i, DEC );
+    printf("%u", i);
 }
 
 void printUintHex ( uint32_t i )
 {
-  Serial.print( i, HEX );
+    printf("%X", i);
 }
 
 void printStr ( char * str )
 {
-  Serial.print( str );    // use only for printing zero-terminated strings: (const char *)
+    printf("%s", str);
+    // use only for printing zero-terminated strings: (const char *)
 }
 
 void printLn ( void )
 {
-  Serial.print( '\n' );
+    printf("\n");
 }
 
 
@@ -200,70 +206,68 @@ void printHistogram ( void * dptr, uint8_t * data, uint8_t len )
 
 void inputOpen ( uint32_t baudrate )
 {
-  Serial.end( );                                     // this clears any old pending data 
-  Serial.begin( baudrate );
+  // Serial.end( ); // this clears any old pending data 
+  // Serial.begin( baudrate );
+  // No direct equivalent in stdio, typically initialization is not needed
 }
 
 void inputClose ( )
 {
-  Serial.end( );
+  // Serial.end( );
+  // No direct equivalent in stdio, typically cleanup is not needed
 }
 
 int8_t inputGetKey ( char *c )
 {
-  *c = 0;
-  if ( Serial.available() )
-  {
-    *c = Serial.read();
-    return 1;
-  }
-  return 0;
+  *c = getchar();
+  return (*c != EOF) ? 1 : 0;
 }
 
 void printConstStr ( const char * str )
 {
-  /* casting back to Arduino specific memory */
-  Serial.print( reinterpret_cast<const __FlashStringHelper *>( str ) );
+  printf("%s", str);
 }
 
 void pinOutput ( uint8_t pin )
 {
-  pinMode( pin, OUTPUT );      /* define a pin as output */
+  // pinMode( pin, OUTPUT ); // define a pin as output
+  // No direct equivalent in stdio, typically handled by GPIO library
 }
 
 void pinInput ( uint8_t pin )
 { 
-  pinMode( pin, INPUT );      /* define a pin as input */
+  // pinMode( pin, INPUT ); // define a pin as input
+  // No direct equivalent in stdio, typically handled by GPIO library
 }
 
 void setInterruptHandler( void (* handler)( void ) )
 {
-  attachInterrupt( digitalPinToInterrupt( INTERRUPT_PIN ), handler, FALLING );
+  // attachInterrupt( digitalPinToInterrupt( INTERRUPT_PIN ), handler, FALLING );
+  // No direct equivalent in stdio, typically handled by GPIO library
 }
 
 void disableInterruptHandler( uint8_t pin )
 {
-  detachInterrupt( digitalPinToInterrupt( pin ) );
+  // detachInterrupt( digitalPinToInterrupt( pin ) );
+  // No direct equivalent in stdio, typically handled by GPIO library
 }
 
 void disableInterrupts ( void )
 {
-  noInterrupts( );
+  // noInterrupts( );
+  // No direct equivalent in stdio, typically handled by system calls
 }
 
 void enableInterrupts ( void )
 {
-  interrupts( );
+  // interrupts( );
+  // No direct equivalent in stdio, typically handled by system calls
 }
 
 char inputGetKey ( )
 {
-  if ( Serial.available() )
-  {
-    char c = Serial.read();
-    return c;
-  }
-  return 0;
+  int c = getchar();
+  return (c != EOF) ? (char)c : 0;
 }
 
 
@@ -272,8 +276,10 @@ char inputGetKey ( )
 static int8_t i2cTxOnly ( uint8_t logLevel, uint8_t slaveAddr, uint8_t regAddr, uint16_t toTx, const uint8_t * txData )
 {  // split long transfers into max of 32-bytes: 1 byte is register address, up to 31 are payload.
   int8_t res = I2C_SUCCESS;
+  //printf("i2cTxOnly, slaveAddr: %x, regAddr: %x, toTx: %d, txData: %s\n", slaveAddr, regAddr, toTx, txData);
   do 
   {
+    //printf("do start\n");
     uint8_t tx;
     if ( toTx > ARDUINO_MAX_I2C_TRANSFER - 1) 
     {
@@ -306,18 +312,18 @@ static int8_t i2cTxOnly ( uint8_t logLevel, uint8_t slaveAddr, uint8_t regAddr, 
       PRINT_LN( );
     }
 
-    Wire.beginTransmission( slaveAddr );
-    Wire.write( regAddr );
-    if ( tx )
-    {
-      Wire.write( txData, tx );
-    }
+    uint8_t buffer[ARDUINO_MAX_I2C_TRANSFER];
+    buffer[0] = regAddr;
+    memcpy(&buffer[1], txData, tx);
+    //printf("i2c write start\n");
+    res = i2c_write_blocking(i2c0, slaveAddr, buffer, tx + 1, false);
+    //printf("i2c_write_blocking, slaveAddr: %x, buffer: %s, tx: %d, res: %d toTx: %d\n", slaveAddr, buffer, tx, res, toTx);
     toTx -= tx;
     txData += tx;
     regAddr += tx;
-    res = Wire.endTransmission( );
   } while ( toTx && res == I2C_SUCCESS );
-  return I2C_SUCCESS;
+  //printf("i2cTxOnly done res: %d\n", res);
+  return res;
 }
 
 static int8_t i2cRxOnly ( uint8_t logLevel, uint8_t slaveAddr, uint16_t toRx, uint8_t * rxData )
@@ -325,6 +331,7 @@ static int8_t i2cRxOnly ( uint8_t logLevel, uint8_t slaveAddr, uint16_t toRx, ui
   uint8_t expected = 0;
   uint8_t rx = 0;
   int8_t res = I2C_SUCCESS;
+  //printf("i2cRxOnly, slaveAddr: %d, toRx: %d, rxData: %s\n", slaveAddr, toRx, rxData);
   do 
   {
     uint8_t * dump = rxData; // in case we dump on uart, we need the pointer
@@ -336,15 +343,11 @@ static int8_t i2cRxOnly ( uint8_t logLevel, uint8_t slaveAddr, uint16_t toRx, ui
     {
       expected = toRx; // less than 32 bytes 
     }
-    Wire.requestFrom( slaveAddr, expected );
-    rx = 0;
-    while ( Wire.available() ) 
-    {  // read in all available bytes
-      *rxData = Wire.read();
-      rxData++;
-      toRx--;
-      rx++;
-    }
+    res = i2c_read_blocking(i2c0, slaveAddr, rxData, expected, false);
+    //printf("rxdata: %s, expected: %d, rx: %d\n", *rxData, expected, rx);
+    rx = expected;
+    toRx -= expected;
+    rxData += expected;
     if ( logLevel & TMF8828_LOG_LEVEL_I2C ) 
     {
       PRINT_STR( "I2C-RX (0x" );
@@ -369,6 +372,7 @@ static int8_t i2cRxOnly ( uint8_t logLevel, uint8_t slaveAddr, uint16_t toRx, ui
   {
     res = I2C_ERR_TIMEOUT;
   }
+  //printf("i2cRxOnly done res: %d\n", res);
   return res;
 }
 
