@@ -25,7 +25,6 @@ int main() {
     hard_assert(rc == PICO_OK);
     setupFn(6, 115200, 400000);
     while (true) {
-        printf("Hello, world!\n");
         loopFn();
         pico_set_led(true);
         sleep_ms(LED_DELAY_MS);

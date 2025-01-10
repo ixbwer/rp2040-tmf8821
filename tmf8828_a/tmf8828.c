@@ -538,7 +538,7 @@ static int8_t tmf8828CheckRegister ( tmf8828Driver * driver, uint8_t regAddr, ui
   {
     dataBuffer[0] = ~expected;
     i2cRxReg( driver, driver->i2cSlaveAddress, regAddr, len, dataBuffer );
-    printf("dataBuffer[0] = %d expected = %d\n", dataBuffer[0], expected);
+    //printf("dataBuffer[0] = %d expected = %d\n", dataBuffer[0], expected);
     if ( dataBuffer[0] == expected )
     {
       return APP_SUCCESS_OK; 

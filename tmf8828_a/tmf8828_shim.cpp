@@ -32,12 +32,13 @@ void delayInMicroseconds ( uint32_t wait )
 uint32_t getSysTick ( )
 {
   //return 0;
-  return (uint32_t) get_absolute_time();
+  return (uint32_t) get_absolute_time() * 10;
 }
 
 uint8_t readProgramMemoryByte ( const uint8_t * ptr )
 {
   uint32_t address = (uint32_t)ptr;
+  return *(uint8_t *)address;
   //return pgm_read_byte( address );
 }
 
@@ -219,8 +220,12 @@ void inputClose ( )
 
 int8_t inputGetKey ( char *c )
 {
-  *c = getchar();
-  return (*c != EOF) ? 1 : 0;
+  int ch = getchar_timeout_us(0); // Non-blocking read with 0 timeout
+  if (ch == PICO_ERROR_TIMEOUT) {
+      return 0;
+  }
+  *c = (char)ch;
+  return 1;
 }
 
 void printConstStr ( const char * str )
@@ -264,10 +269,10 @@ void enableInterrupts ( void )
   // No direct equivalent in stdio, typically handled by system calls
 }
 
-char inputGetKey ( )
+char inputGetKey ( )  
 {
-  int c = getchar();
-  return (c != EOF) ? (char)c : 0;
+    int ch = getchar_timeout_us(0); // Non-blocking read with 0 timeout
+    return (ch != PICO_ERROR_TIMEOUT) ? (char)ch : 0;
 }
 
 
@@ -317,6 +322,10 @@ static int8_t i2cTxOnly ( uint8_t logLevel, uint8_t slaveAddr, uint8_t regAddr, 
     memcpy(&buffer[1], txData, tx);
     //printf("i2c write start\n");
     res = i2c_write_blocking(i2c0, slaveAddr, buffer, tx + 1, false);
+    if (res != PICO_ERROR_GENERIC)
+    {
+        res = I2C_SUCCESS;
+    }
     //printf("i2c_write_blocking, slaveAddr: %x, buffer: %s, tx: %d, res: %d toTx: %d\n", slaveAddr, buffer, tx, res, toTx);
     toTx -= tx;
     txData += tx;
@@ -386,6 +395,7 @@ int8_t i2cRxReg ( void * dptr, uint8_t slaveAddr, uint8_t regAddr, uint16_t toRx
 {   // split long transfers into max of 32-bytes
   tmf8828Driver * driver = (tmf8828Driver *)dptr;
   int8_t res = i2cTxOnly( driver->logLevel, slaveAddr, regAddr, 0, 0 ); 
+  //printf( "Tx res %d\n", res );
   if ( res == I2C_SUCCESS )
   {
     res = i2cRxOnly( driver->logLevel, slaveAddr, toRx, rxData );
