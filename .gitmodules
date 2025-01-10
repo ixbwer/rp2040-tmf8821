@@ -1,3 +1,9 @@
 [submodule "pico-sdk"]
 	path = pico-sdk
 	url = git@github.com:raspberrypi/pico-sdk.git
+[submodule "tmf8820_21_28_app_keystone"]
+	path = tmf8820_21_28_app_keystone
+	url = git@github.com:ams-OSRAM/tmf8820_21_28_app_keystone.git
+[submodule "tmf8820_21_28_driver_descattering_filter"]
+	path = tmf8820_21_28_driver_descattering_filter
+	url = git@github.com:ams-OSRAM/tmf8820_21_28_driver_descattering_filter.git

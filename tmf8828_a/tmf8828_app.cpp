@@ -815,7 +815,11 @@ int8_t loopFn ( )
 {
   int8_t res = APP_SUCCESS_OK;
   uint8_t intStatus = 0;
-  int8_t exit = serialInput();                                                            // handle any keystrokes from UART
+  int8_t exit = 0;
+  if (stateTmf8828 != TMF8828_STATE_MEASURE )
+  {
+    int8_t exit = serialInput();
+  }
 
 #if ( defined( USE_INTERRUPT_TO_TRIGGER_READ ) && (USE_INTERRUPT_TO_TRIGGER_READ != 0) )
   if ( irqTriggered )
