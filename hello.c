@@ -26,9 +26,5 @@ int main() {
     setupFn(6, 115200, 400000);
     while (true) {
         loopFn();
-        pico_set_led(true);
-        sleep_ms(LED_DELAY_MS);
-        pico_set_led(false);
-        sleep_ms(LED_DELAY_MS);
     }
 }

@@ -827,7 +827,7 @@ int8_t loopFn ( )
     irqTriggered = 0;
     enableInterrupts( );
     intStatus = tmf8828GetAndClrInterrupts( &(tmf8828[0]), TMF8828_APP_I2C_RESULT_IRQ_MASK | TMF8828_APP_I2C_ANY_IRQ_MASK | TMF8828_APP_I2C_RAW_HISTOGRAM_IRQ_MASK );   // always clear also the ANY interrupt
-    printf("intstatus %d\n",intStatus);
+
     if ( intStatus & TMF8828_APP_I2C_RESULT_IRQ_MASK )                      // check if a result is available (ignore here the any interrupt)
     {
       res = tmf8828ReadResults( &(tmf8828[0]) );
