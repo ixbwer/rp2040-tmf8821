@@ -32,7 +32,7 @@ void delayInMicroseconds ( uint32_t wait )
 uint32_t getSysTick ( )
 {
   //return 0;
-  return (uint32_t) get_absolute_time() * 10;
+  return (uint32_t) get_absolute_time();
 }
 
 uint8_t readProgramMemoryByte ( const uint8_t * ptr )
