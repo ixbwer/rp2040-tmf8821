@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "tmf8828_app.h"
-
+#include "st7789.h"
 #ifndef LED_DELAY_MS
 #define LED_DELAY_MS 250
 #endif
@@ -22,6 +22,9 @@ void pico_set_led(bool led_on) {
 int main() {
     stdio_init_all();
     int rc = pico_led_init();
+    sleep_ms(1000);
+    printf("Hello, world!\n");
+    st7789_test();
     hard_assert(rc == PICO_OK);
     setupFn(6, 115200, 400000);
     while (true) {

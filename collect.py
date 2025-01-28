@@ -23,7 +23,8 @@ class TMF8821Monitor:
         
         # 数据缓冲
         self.data_buffer = deque(maxlen=3)  # 保存最近3帧数据
-        
+        self.judge_buffer = deque(maxlen=10) # 保存最近10帧数据
+
         # 预计算颜色映射数组
         self.color_map = np.zeros((256, 4))
         for i in range(256):
@@ -68,7 +69,7 @@ class TMF8821Monitor:
         return None
 
     def connect_serial(self):
-        port = self.select_port()
+        port = "COM5"
         if port:
             try:
                 self.ser = serial.Serial(port, 115200, timeout=1)
@@ -112,7 +113,9 @@ class TMF8821Monitor:
                     result = self.parse_line(line)
                     if result[0] is not None:
                         self.data_buffer.append(result)
-                
+                        self.judge_buffer.append(result)
+                if self.judge_buffer:
+                    determin_direction(self.judge_buffer)
                 if self.data_buffer:
                     # 使用最新的数据
                     distances, confidences = self.data_buffer[-1]
@@ -149,6 +152,131 @@ class TMF8821Monitor:
         
         if self.ser:
             self.ser.close()
+
+def get_arrow(dx, dy):
+    """根据移动方向返回箭头符号，只返回上下左右四个方向"""
+    arrows = {
+        (0, -1): "←",    # 左
+        (0, 1): "→",     # 右
+        (-1, 0): "↑",    # 上
+        (1, 0): "↓"      # 下
+    }
+    
+    # 添加方向判断的阈值
+    dir_threshold = 0.1
+    
+    # 判断哪个方向的变化更显著
+    if abs(dx) > dir_threshold or abs(dy) > dir_threshold:
+        if abs(dx) > abs(dy):
+            # 上下移动更明显
+            x_dir = 1 if dx > 0 else -1
+            y_dir = 0
+        else:
+            # 左右移动更明显
+            x_dir = 0
+            y_dir = 1 if dy > 0 else -1
+    else:
+        return "•"  # 静止状态
+    
+    return arrows.get((x_dir, y_dir), "•")
+
+class DirectionFilter:
+    def __init__(self, buffer_size=5):
+        self.direction_buffer = deque(maxlen=buffer_size)
+        self.last_direction = "•"
+        self.consecutive_count = 0
+        self.min_consecutive = 2  # 需要连续出现的次数
+    
+    def update(self, new_direction):
+        if new_direction == self.last_direction:
+            self.consecutive_count += 1
+        else:
+            self.consecutive_count = 1
+            
+        self.direction_buffer.append(new_direction)
+        self.last_direction = new_direction
+        
+        # 只有当某个方向连续出现足够次数时才返回
+        if self.consecutive_count >= self.min_consecutive:
+            return new_direction
+        return None
+    
+    def get_dominant_direction(self):
+        if not self.direction_buffer:
+            return "•"
+        # 获取出现最多的方向
+        return max(set(self.direction_buffer), 
+                  key=self.direction_buffer.count)
+
+def determin_direction(buffer):
+    if len(buffer) < 5:
+        return
+    
+    # 使用全局方向过滤器
+    global direction_filter
+    if 'direction_filter' not in globals():
+        direction_filter = DirectionFilter()
+    
+    recent_frames = list(buffer)[-5:]
+    centroids = []
+    
+    for frame in recent_frames:
+        distances = np.array(frame[0]).reshape(3, 3)
+        valid_points = distances > 0
+        if not valid_points.any():
+            continue
+            
+        x_coords, y_coords = np.where(valid_points)
+        g_x = np.mean(x_coords)
+        g_y = np.mean(y_coords)
+        centroids.append((g_x, g_y))
+    
+    if len(centroids) < 3:
+        print("\r ", end="", flush=True)
+        return
+        
+    x_trend = np.polyfit([i for i in range(len(centroids))],
+                        [c[0] for c in centroids], 1)[0]
+    y_trend = np.polyfit([i for i in range(len(centroids))],
+                        [c[1] for c in centroids], 1)[0]
+    
+    threshold = 0.1
+    
+    if abs(x_trend) > threshold or abs(y_trend) > threshold:
+        new_arrow = get_arrow(x_trend, y_trend)
+        # 使用方向过滤器
+        filtered_arrow = direction_filter.update(new_arrow)
+        if filtered_arrow:
+            print("\r" + filtered_arrow + " ", end="", flush=True)
+        else:
+            print("\r ", end="", flush=True)
+    else:
+        direction_filter.update("•")
+        print("\r ", end="", flush=True)
+
+class Part:
+    Left = 0
+    LeftTop = 1
+    Top = 2
+    RightTop = 3
+    Right = 4
+    RightDown = 5
+    Down = 6
+    LeftDown = 7
+    Undetermined = 8
+class Direction():
+    def __init__(self):
+        self.start_part = Part.Undetermined
+        self.accpetable_part = []
+        self.part_history = []
+      
+    def set_start_part(self, part):
+        self.start_part = part
+        self.accpetable_part = [0, 1, 2, 3, 4, 5, 6, 7]
+        self.accpetable_part.remove(part)
+        self.accpetable_part.remove((part + 1) % 8)
+        self.accpetable_part.remove((part - 1) % 8)
+    
 
 if __name__ == "__main__":
     monitor = TMF8821Monitor()

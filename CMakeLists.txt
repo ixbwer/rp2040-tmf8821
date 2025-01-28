@@ -31,13 +31,21 @@ set(PICO_BOARD pico CACHE STRING "Board type")
 cmake_minimum_required(VERSION 3.13)
 
 file(GLOB TMF8828_A_FILES "tmf8828_a/*")
+file(GLOB ST7789_FILES "st7789/*")
 add_executable(hello
-    hello.c
+    hello.cpp
     ${TMF8828_A_FILES}
+    ${ST7789_FILES}
 )
 
 include_directories(tmf8828_a)
-target_link_libraries(hello pico_stdlib hardware_i2c)
+include_directories(st7789)
+target_link_libraries(hello 
+    pico_stdlib 
+    hardware_i2c
+    hardware_spi
+    hardware_gpio
+    )
 # set PICO_SDK_PATH
 set(PICO_SDK_PATH "../pico-sdk")
 include(pico_sdk_import.cmake)
