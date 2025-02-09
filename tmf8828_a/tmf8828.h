@@ -345,6 +345,7 @@ uint16_t tmf8828CorrectDistance( tmf8828Driver * driver, uint16_t distance );
 // driver ... pointer to an instance of the tmf8828 driver data structure
 // Function returns APP_SUCCESS_OK if there was a histogram page, else APP_ERROR_NO_RESULT_PAGE.
 int8_t tmf8828ReadHistogram( tmf8828Driver * driver );
+int8_t ReadResults( tmf8828Driver* driver, uint8_t* dstBuffer);
 
 #ifdef __cplusplus
 }

@@ -33,7 +33,11 @@
 #include "tmf882x_calib.h"
 #include "tmf8828_image.h"
 #include "tmf882x_image.h"
-
+#include <deque>
+#include <vector>
+#include <algorithm>
+#include <numeric>
+#include <cmath>
 
 // ---------------------------------------------- defines -----------------------------------------
 
@@ -808,6 +812,171 @@ void setupFn( uint8_t logLevelIdx, uint32_t baudrate, uint32_t i2cClockSpeedInHz
   tmf8828Disable( &(tmf8828[0]) );                                     // this resets the I2C address in the device
   delayInMicroseconds(CAP_DISCHARGE_TIME_MS * 1000); // wait for a proper discharge of the cap
   printHelp();
+}
+
+// Altered by Ibxwer
+void setupforTMF882x()
+{
+  setupFn(255, 115200, 4000000);
+  enable( tmf882x_image_start, tmf882x_image, tmf882x_image_length );
+  measure(); 
+}
+
+class DirectionFilter {
+public:
+    DirectionFilter(size_t buffer_size = 5)
+        : direction_buffer(buffer_size), last_direction('-'), consecutive_count(0), min_consecutive(2) {}
+
+    char update(char new_direction) {
+        if (new_direction == last_direction) {
+            consecutive_count++;
+        } else {
+            consecutive_count = 1;
+        }
+
+        direction_buffer.push_back(new_direction);
+        last_direction = new_direction;
+
+        if (consecutive_count >= min_consecutive) {
+            return new_direction;
+        }
+        return '-';
+    }
+
+    char get_dominant_direction() {
+        if (direction_buffer.empty()) {
+            return '-';
+        }
+        return *std::max_element(direction_buffer.begin(), direction_buffer.end(),
+                                [this](char a, char b) {
+                                    return std::count(direction_buffer.begin(), direction_buffer.end(), a) <
+                                           std::count(direction_buffer.begin(), direction_buffer.end(), b);
+                                });
+    }
+
+private:
+    std::deque<char> direction_buffer;
+    char last_direction;
+    size_t consecutive_count;
+    size_t min_consecutive;
+};
+
+DirectionFilter direction_filter;
+
+char get_arrow(float dx, float dy) {
+    //printf("\rdx:%f dy:%f\n", dx, dy);
+    const float dir_threshold = 0.1;
+    if (std::abs(dx) > dir_threshold || std::abs(dy) > dir_threshold) {
+        if (std::abs(dx) > std::abs(dy)) {
+            return dx > 0 ? 'd' : 'u';
+        } else {
+            return dy > 0 ? 'r' : 'l';
+        }
+    }
+    return '-';
+}
+
+void determine_direction(std::deque<std::pair<std::vector<uint16_t>, std::vector<uint8_t>>> &buffer) {
+    if (buffer.size() < 5) {
+        return;
+    }
+
+    std::vector<std::pair<float, float>> centroids;
+    for (const auto &frame : buffer) {
+        const auto &distances = frame.first;
+        std::vector<float> x_coords, y_coords;
+        for (size_t i = 0; i < distances.size(); ++i) {
+            if (distances[i] > 0) {
+                x_coords.push_back(i % 3);
+                y_coords.push_back(i / 3);
+            }
+        }
+        if (!x_coords.empty() && !y_coords.empty()) {
+            float g_x = std::accumulate(x_coords.begin(), x_coords.end(), 0.0f) / x_coords.size();
+            float g_y = std::accumulate(y_coords.begin(), y_coords.end(), 0.0f) / y_coords.size();
+            centroids.emplace_back(g_x, g_y);
+        }
+    }
+
+    if (centroids.size() < 3) {
+        return;
+    }
+
+    std::vector<float> indices(centroids.size());
+    std::iota(indices.begin(), indices.end(), 0);
+
+    float x_mean = std::accumulate(indices.begin(), indices.end(), 0.0f) / indices.size();
+    float y_mean = std::accumulate(centroids.begin(), centroids.end(), 0.0f, [](float sum, const std::pair<float, float>& p) { return sum + p.first; }) / centroids.size();
+
+    float x_slope = std::inner_product(indices.begin(), indices.end(), centroids.begin(), 0.0f,
+                                       std::plus<>(), [x_mean, y_mean](float a, const std::pair<float, float> &b) { return (a - x_mean) * (b.first - y_mean); }) /
+                    std::inner_product(indices.begin(), indices.end(), indices.begin(), 0.0f, std::plus<>(), [x_mean](float a, float b) { return (a - x_mean) * (b - x_mean); });
+
+    y_mean = std::accumulate(centroids.begin(), centroids.end(), 0.0f, [](float sum, const std::pair<float, float>& p) { return sum + p.second; }) / centroids.size();
+
+    float y_slope = std::inner_product(indices.begin(), indices.end(), centroids.begin(), 0.0f,
+                                       std::plus<>(), [x_mean, y_mean](float a, const std::pair<float, float> &b) { return (a - x_mean) * (b.second - y_mean); }) /
+                    std::inner_product(indices.begin(), indices.end(), indices.begin(), 0.0f, std::plus<>(), [x_mean](float a, float b) { return (a - x_mean) * (b - x_mean); });
+
+    char new_arrow = get_arrow(x_slope, y_slope);
+    char filtered_arrow = direction_filter.update(new_arrow);
+    if (filtered_arrow != '-') {
+        printf("\r%c ", filtered_arrow);
+    } else {
+        //printf("\r ");
+    }
+}
+
+void loopFnforTMF882x()
+{
+  uint8_t intStatus = 0;
+  int8_t res = APP_SUCCESS_OK;
+  disableInterrupts( );
+  irqTriggered = 0;
+  enableInterrupts( );
+  intStatus = tmf8828GetAndClrInterrupts( &(tmf8828[0]), TMF8828_APP_I2C_RESULT_IRQ_MASK | TMF8828_APP_I2C_ANY_IRQ_MASK | TMF8828_APP_I2C_RAW_HISTOGRAM_IRQ_MASK );   // always clear also the ANY interrupt
+  uint8_t data[27];
+  static std::deque<std::pair<std::vector<uint16_t>, std::vector<uint8_t>>> judge_buffer;
+
+  if ( intStatus & TMF8828_APP_I2C_RESULT_IRQ_MASK )                      // check if a result is available (ignore here the any interrupt)
+  {
+    res = ReadResults( &(tmf8828[0]), data);
+    if (res == APP_SUCCESS_OK)
+    {
+      std::vector<uint16_t> distances(9);
+      std::vector<uint8_t> confidences(9);
+      for (int i = 0; i < 27; i += 3) {
+        confidences[i / 3] = data[i];
+        distances[i / 3] = (data[i + 2] << 8) + data[i + 1];
+        if (confidences[i / 3] <= 100) {
+          distances[i / 3] = 0; // Invalidate distance if confidence is not greater than 100
+        }
+      }
+      judge_buffer.emplace_back(distances, confidences);
+      if (judge_buffer.size() > 10) {
+        judge_buffer.pop_front();
+      }
+      determine_direction(judge_buffer);
+    }
+  }
+  if ( intStatus & TMF8828_APP_I2C_RAW_HISTOGRAM_IRQ_MASK )
+  {
+    res = tmf8828ReadHistogram( &(tmf8828[0]) );                                              // read a (partial) raw histogram
+  }
+  if ( res != APP_SUCCESS_OK )                         // in case that fails there is some error in programming or on the device, this should not happen
+  {
+    tmf8828StopMeasurement( &(tmf8828[0]) );
+    tmf8828DisableInterrupts( &(tmf8828[0]), 0xFF );
+    stateTmf8828 = TMF8828_STATE_STOPPED;
+    PRINT_CONST_STR( (  "#Err" ) );
+    PRINT_CHAR( SEPARATOR );
+    PRINT_CONST_STR( (  "inter" ) );
+    PRINT_CHAR( SEPARATOR );
+    PRINT_INT( intStatus );
+    PRINT_CHAR( SEPARATOR );
+    PRINT_CONST_STR( (  "but no data" ) );
+    PRINT_LN( );
+  } 
 }
 
 // Arduino main loop function, is executed cyclic

@@ -816,32 +816,3 @@ void ST7789::text(const uint8_t *font, const char *text, int x0, int y0, uint16_
         text16(font, text, x0, y0, color, background);
     }
 }
-
-void st7789_test(void) {
-    printf("ST7789 test\n");
-    spi_inst_t *spi = spi0;
-
-    gpio_init(SPI_DC_PIN);
-    gpio_init(SPI_RESET_PIN);
-    gpio_set_dir(SPI_DC_PIN, GPIO_OUT);
-    gpio_set_dir(SPI_RESET_PIN, GPIO_OUT);
-
-    gpio_set_function(SPI_TX_PIN, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_SCK_PIN, GPIO_FUNC_SPI);
-    spi_init(spi, 20000000);
-    spi_set_format(spi, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
-
-    int disp_width = 240;
-    int disp_height = 240;
-    uint8_t st7789_res = 0;
-    uint8_t st7789_dc = 1;
-    uint8_t font2[] = {0x20, 0x7f, 8, 8, 8};
-    ST7789 display(spi, disp_width, disp_height, st7789_res, st7789_dc, 0, 0, 0, 0, 0);
-
-    display.text(font2, "Hello!", 10, 10, WHITE, BLACK);
-    display.text(font2, "RPi Pico", 10, 40, WHITE, BLACK);
-    display.text(font2, "MicroPython", 35, 100, WHITE, BLACK);
-    display.text(font2, "EETREE", 35, 150, WHITE, BLACK);
-    display.text(font2, "www.eetree.cn", 30, 200, WHITE, BLACK);
-    printf("ST7789 test end\n");
-}

@@ -50,7 +50,9 @@ void setupFn( uint8_t logLevelIdx, uint32_t baudrate, uint32_t i2cClockSpeedInHz
  * @return 0 if program should terminate
  */
 int8_t loopFn( );
+void setupforTMF882x();
 
+void loopFnforTMF882x();
 /** @brief Arduino terminate function is only called once when exit key 'q' is pressed. Write a message and wait for shutdown of arduino.
  */
 void terminateFn( );

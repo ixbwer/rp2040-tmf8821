@@ -1086,6 +1086,22 @@ int8_t tmf8828ReadResults ( tmf8828Driver * driver )
   return APP_ERROR_NO_RESULT_PAGE;
 }
 
+int8_t ReadResults( tmf8828Driver* driver, uint8_t* dstBuffer)
+{
+  uint32_t hTick;            // get the sys-tick just before the I2C rx
+  dataBuffer[0] = 0;
+  hTick = getSysTick();            // get the sys-tick just before the I2C rx
+  i2cRxReg(driver, driver->i2cSlaveAddress, TMF8828_COM_CONFIG_RESULT, TMF8828_COM_CONFIG_RESULT__measurement_result_size, dataBuffer);
+  if (dataBuffer[0] == TMF8828_COM_CONFIG_RESULT__measurement_result)
+  {
+    uint32_t tTick = tmf8828GetUint32(dataBuffer + RESULT_REG(SYS_TICK_0));
+    tmf8828ClockCorrectionAddPair(driver, hTick, tTick);
+    memcpy(dstBuffer, dataBuffer+24, 27);
+    return APP_SUCCESS_OK;
+  }
+  return APP_ERROR_NO_RESULT_PAGE;
+}
+
 // Correct the distance based on the clock correction pairs 
 uint16_t tmf8828CorrectDistance ( tmf8828Driver * driver, uint16_t distance )
 {
