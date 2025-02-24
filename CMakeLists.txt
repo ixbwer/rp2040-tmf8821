@@ -45,6 +45,7 @@ target_link_libraries(hello
     hardware_i2c
     hardware_spi
     hardware_gpio
+    pico_multicore
     )
 # set PICO_SDK_PATH
 set(PICO_SDK_PATH "../pico-sdk")

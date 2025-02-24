@@ -783,20 +783,20 @@ static void tmf8828ClockCorrectionAddPair ( tmf8828Driver * driver, uint32_t hos
       uint32_t hDiff = driver->hostTicks[ idx ] - driver->hostTicks[ idx2 ];
       uint32_t tDiff = driver->tmf8828Ticks[ idx ] - driver->tmf8828Ticks[ idx2 ];
       driver->clkCorrRatioUQ = tmf8828CalcClkRatioUQ16( hDiff, tDiff, driver->clkCorrRatioUQ );
-      if ( driver->logLevel & TMF8828_LOG_LEVEL_CLK_CORRECTION )
-      {
-        PRINT_STR( "ClkCorr ratio " );  
-        PRINT_UINT( hDiff * TMF8828_TICKS_PER_US );
-        PRINT_CHAR( ' ' );
-        PRINT_UINT( tDiff * HOST_TICKS_PER_US );
-        PRINT_CHAR( ' ' );
-        PRINT_UINT( hDiff / HOST_TICKS_PER_US );
-        PRINT_CHAR( ' ' );
-        PRINT_UINT( tDiff / TMF8828_TICKS_PER_US );
-        PRINT_CHAR( ' ' );
-        PRINT_UINT( driver->clkCorrRatioUQ ); 
-        PRINT_LN( );                              
-      }                                             
+      // if ( driver->logLevel & TMF8828_LOG_LEVEL_CLK_CORRECTION )
+      // {
+      //   PRINT_STR( "ClkCorr ratio " );  
+      //   PRINT_UINT( hDiff * TMF8828_TICKS_PER_US );
+      //   PRINT_CHAR( ' ' );
+      //   PRINT_UINT( tDiff * HOST_TICKS_PER_US );
+      //   PRINT_CHAR( ' ' );
+      //   PRINT_UINT( hDiff / HOST_TICKS_PER_US );
+      //   PRINT_CHAR( ' ' );
+      //   PRINT_UINT( tDiff / TMF8828_TICKS_PER_US );
+      //   PRINT_CHAR( ' ' );
+      //   PRINT_UINT( driver->clkCorrRatioUQ ); 
+      //   PRINT_LN( );                              
+      // }                                             
     } /* else use last valid clock correction Ration UQ */
   }
   else if ( driver->logLevel & TMF8828_LOG_LEVEL_CLK_CORRECTION )

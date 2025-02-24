@@ -85,16 +85,21 @@
 
 #define _BUFFER_SIZE 2
 
-#define ACTION_Y 4
-#define ACTION_HEIGHT 230
-#define ACTION_X 205
-#define ACTION_WIDTH 16
+#define ACTION_Y 0
+#define ACTION_HEIGHT 240
+#define ACTION_X 220
+#define ACTION_WIDTH 20
 
 class ST7789 {
 private:
     int _display_width;
     int _display_height;
     int _rotation;
+    uint16_t _action_buffer[ACTION_WIDTH * ACTION_HEIGHT];
+    uint16_t new_buffer[ACTION_WIDTH * ACTION_HEIGHT];
+
+    void _init_action_buffer();
+    void _cleanup_action_buffer();
 
 public:
     spi_inst_t *spi;
@@ -145,7 +150,7 @@ public:
     
     // Draw a filled ellipse
     void fill_ellipse(int x0, int y0, int a, int b, uint16_t color);
-    void ST7789::paint_energybar(int user_height,int action_height);
+    void paint_energybar(int user_height,int action_height);
 
 private:
     // Helper function for circle/ellipse drawing

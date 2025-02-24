@@ -56,14 +56,12 @@ void enablePinLow ( void * dptr )
 
 void configurePins ( void * dptr )
 {
-  (void)dptr; // not used here
-  // configure ENABLE pin and interupt pin
   gpio_init(ENABLE_PIN);
   gpio_set_dir(ENABLE_PIN, GPIO_OUT);
-  gpio_init(INTERRUPT_PIN);
-  gpio_set_dir(INTERRUPT_PIN, GPIO_IN);
-  gpio_pull_up(INTERRUPT_PIN);
-  gpio_init(TRIGGER_INTERRUPT_PIN);           // if interrupt PIN is used        
+  // gpio_init(INTERRUPT_PIN);
+  // gpio_set_dir(INTERRUPT_PIN, GPIO_IN);
+  // gpio_pull_up(INTERRUPT_PIN);
+  // gpio_init(TRIGGER_INTERRUPT_PIN);           // if interrupt PIN is used        
 }
 
 

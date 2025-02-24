@@ -51,8 +51,16 @@ void setupFn( uint8_t logLevelIdx, uint32_t baudrate, uint32_t i2cClockSpeedInHz
  */
 int8_t loopFn( );
 void setupforTMF882x();
+// 传感器数据结构体
+struct SensorData {
+    int average_height;     // 平均高度
+    char direction;         // 方向 ('u'=up, 'd'=down, 'l'=left, 'r'=right, '-'=none)
+    bool valid;            // 数据是否有效
+    
+    SensorData() : average_height(0), direction('-'), valid(false) {}
+};
 
-void loopFnforTMF882x();
+void loopFnforTMF882x(SensorData *sensor_data);
 /** @brief Arduino terminate function is only called once when exit key 'q' is pressed. Write a message and wait for shutdown of arduino.
  */
 void terminateFn( );

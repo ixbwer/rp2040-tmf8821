@@ -817,7 +817,7 @@ void setupFn( uint8_t logLevelIdx, uint32_t baudrate, uint32_t i2cClockSpeedInHz
 // Altered by Ibxwer
 void setupforTMF882x()
 {
-  setupFn(255, 115200, 4000000);
+  setupFn(0, 115200, 4000000);
   enable( tmf882x_image_start, tmf882x_image, tmf882x_image_length );
   measure(); 
 }
@@ -876,17 +876,21 @@ char get_arrow(float dx, float dy) {
     return '-';
 }
 
-void determine_direction(std::deque<std::pair<std::vector<uint16_t>, std::vector<uint8_t>>> &buffer) {
-    if (buffer.size() < 5) {
-        return;
+char determine_direction(std::deque<std::pair<std::vector<uint16_t>, std::vector<uint8_t>>> &buffer) {
+    if (buffer.size() < 3) {
+      return '-';
     }
 
+    // Only consider objects within 100mm for direction detection
+    const int max_distance_for_direction = 100;
+    
     std::vector<std::pair<float, float>> centroids;
     for (const auto &frame : buffer) {
         const auto &distances = frame.first;
         std::vector<float> x_coords, y_coords;
         for (size_t i = 0; i < distances.size(); ++i) {
-            if (distances[i] > 0) {
+            // Only consider points within the maximum distance threshold
+            if (distances[i] > 0 && distances[i] <= max_distance_for_direction) {
                 x_coords.push_back(i % 3);
                 y_coords.push_back(i / 3);
             }
@@ -898,8 +902,9 @@ void determine_direction(std::deque<std::pair<std::vector<uint16_t>, std::vector
         }
     }
 
+    // If we don't have enough valid centroids (close objects), return without direction update
     if (centroids.size() < 3) {
-        return;
+        return '-';
     }
 
     std::vector<float> indices(centroids.size());
@@ -920,39 +925,43 @@ void determine_direction(std::deque<std::pair<std::vector<uint16_t>, std::vector
 
     char new_arrow = get_arrow(x_slope, y_slope);
     char filtered_arrow = direction_filter.update(new_arrow);
-    if (filtered_arrow != '-') {
-        printf("\r%c ", filtered_arrow);
-    } else {
-        //printf("\r ");
-    }
+    return filtered_arrow;
 }
 
-void loopFnforTMF882x()
+void loopFnforTMF882x(SensorData *sensor_data)
 {
   uint8_t intStatus = 0;
   int8_t res = APP_SUCCESS_OK;
-  disableInterrupts( );
+  //SensorData sensor_data;
+  
+  disableInterrupts();
   irqTriggered = 0;
-  enableInterrupts( );
-  intStatus = tmf8828GetAndClrInterrupts( &(tmf8828[0]), TMF8828_APP_I2C_RESULT_IRQ_MASK | TMF8828_APP_I2C_ANY_IRQ_MASK | TMF8828_APP_I2C_RAW_HISTOGRAM_IRQ_MASK );   // always clear also the ANY interrupt
+  enableInterrupts();
+  intStatus = tmf8828GetAndClrInterrupts(&(tmf8828[0]), TMF8828_APP_I2C_RESULT_IRQ_MASK | TMF8828_APP_I2C_ANY_IRQ_MASK | TMF8828_APP_I2C_RAW_HISTOGRAM_IRQ_MASK);
+
   uint8_t data[27];
   static std::deque<std::pair<std::vector<uint16_t>, std::vector<uint8_t>>> judge_buffer;
 
-  if ( intStatus & TMF8828_APP_I2C_RESULT_IRQ_MASK )                      // check if a result is available (ignore here the any interrupt)
+  if (intStatus & TMF8828_APP_I2C_RESULT_IRQ_MASK)
   {
-    res = ReadResults( &(tmf8828[0]), data);
+    res = ReadResults(&(tmf8828[0]), data);
     if (res == APP_SUCCESS_OK)
     {
-      std::vector<uint16_t> distances(9);
+      std::vector<uint16_t> distances(9,0);
       std::vector<uint8_t> confidences(9);
       for (int i = 0; i < 27; i += 3) {
         confidences[i / 3] = data[i];
-        distances[i / 3] = (data[i + 2] << 8) + data[i + 1];
-        if (confidences[i / 3] <= 100) {
-          distances[i / 3] = 0; // Invalidate distance if confidence is not greater than 100
-        }
+        if ((confidences[i / 3] > 100))
+          distances[i / 3] = (data[i + 2] << 8) + data[i + 1];
       }
-      // get average height
+      
+      // // print distance data
+      // for (int i = 0; i < 9; i++) {
+      //   printf("%d ", distances[i]);
+      // }
+      // printf("\n");
+
+      // Calculate average height
       int average_height = 0;
       int count = 0;
       for (int i = 0; i < 9; i++) {
@@ -963,36 +972,47 @@ void loopFnforTMF882x()
       }
       if (count > 0) {
         average_height /= count;
+        sensor_data->average_height = average_height;
+        sensor_data->valid = (count > 4);  // Only consider valid if more than 4 points
       }
-      if (count > 4)
-      {
-        printf("average height: %d\n", average_height);
+
+      // Direction detection - only add to buffer if we have at least one close point (<100mm)
+      bool has_close_point = false;
+      for (int i = 0; i < 9; i++) {
+        if (distances[i] > 0 && distances[i] <= 100) {
+            has_close_point = true;
+            break;
+        }
       }
-      judge_buffer.emplace_back(distances, confidences);
-      if (judge_buffer.size() > 10) {
-        judge_buffer.pop_front();
+      
+      if (has_close_point) {
+        judge_buffer.emplace_back(distances, confidences);
+        if (judge_buffer.size() > 20) {
+          judge_buffer.pop_front();
+        }
+        sensor_data->direction = determine_direction(judge_buffer);
+      } else {
+        sensor_data->direction = '-';
+        judge_buffer.clear();
       }
-      determine_direction(judge_buffer);
     }
   }
-  if ( intStatus & TMF8828_APP_I2C_RAW_HISTOGRAM_IRQ_MASK )
+
+  if (intStatus & TMF8828_APP_I2C_RAW_HISTOGRAM_IRQ_MASK)
   {
-    res = tmf8828ReadHistogram( &(tmf8828[0]) );                                              // read a (partial) raw histogram
+    res = tmf8828ReadHistogram(&(tmf8828[0]));
   }
-  if ( res != APP_SUCCESS_OK )                         // in case that fails there is some error in programming or on the device, this should not happen
+
+  if (res != APP_SUCCESS_OK)
   {
-    tmf8828StopMeasurement( &(tmf8828[0]) );
-    tmf8828DisableInterrupts( &(tmf8828[0]), 0xFF );
+    tmf8828StopMeasurement(&(tmf8828[0]));
+    tmf8828DisableInterrupts(&(tmf8828[0]), 0xFF);
     stateTmf8828 = TMF8828_STATE_STOPPED;
-    PRINT_CONST_STR( (  "#Err" ) );
-    PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( (  "inter" ) );
-    PRINT_CHAR( SEPARATOR );
-    PRINT_INT( intStatus );
-    PRINT_CHAR( SEPARATOR );
-    PRINT_CONST_STR( (  "but no data" ) );
-    PRINT_LN( );
-  } 
+    sensor_data->valid = false;
+  }
+  // printf("Direction: %c\n", sensor_data->direction);
+  // printf("Average height: %d\n", sensor_data->average_height);
+  // printf("Valid: %d\n", sensor_data->valid);
 }
 
 // Arduino main loop function, is executed cyclic
