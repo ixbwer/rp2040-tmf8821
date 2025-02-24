@@ -64,6 +64,32 @@
 
 #define _BUFFER_SIZE 2
 
+#define SPI_TX_PIN 3
+#define SPI_SCK_PIN 2
+#define SPI_DC_PIN 1
+#define SPI_RESET_PIN 0
+
+
+#define BLACK 0x0000
+#define BLUE 0x001F
+#define RED 0xF800
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define WHITE 0xFFFF
+
+#define _ENCODE_PIXEL  ">H"
+#define _ENCODE_POS    ">HH"
+#define _ENCODE_RECT   ">BBB"
+
+#define _BUFFER_SIZE 2
+
+#define ACTION_Y 4
+#define ACTION_HEIGHT 230
+#define ACTION_X 205
+#define ACTION_WIDTH 16
+
 class ST7789 {
 private:
     int _display_width;
@@ -106,6 +132,25 @@ public:
     void text8(const uint8_t *font, const char *text, int x0, int y0, uint16_t color, uint16_t background);
     void text16(const uint8_t *font, const char *text, int x0, int y0, uint16_t color, uint16_t background);
     void text(const uint8_t *font, const char *text, int x0, int y0, uint16_t color, uint16_t background);
+    void test_pic();
+    
+    // Draw a circle
+    void circle(int x0, int y0, int r, uint16_t color);
+    
+    // Draw a filled circle
+    void fill_circle(int x0, int y0, int r, uint16_t color);
+    
+    // Draw an ellipse
+    void ellipse(int x0, int y0, int a, int b, uint16_t color);
+    
+    // Draw a filled ellipse
+    void fill_ellipse(int x0, int y0, int a, int b, uint16_t color);
+    void ST7789::paint_energybar(int user_height,int action_height);
+
+private:
+    // Helper function for circle/ellipse drawing
+    void plot_points(int x0, int y0, int x, int y, uint16_t color);
+    void fill_points(int x0, int y0, int x, int y, uint16_t color);
 };
 
 void st7789_test();

@@ -952,6 +952,22 @@ void loopFnforTMF882x()
           distances[i / 3] = 0; // Invalidate distance if confidence is not greater than 100
         }
       }
+      // get average height
+      int average_height = 0;
+      int count = 0;
+      for (int i = 0; i < 9; i++) {
+        if (distances[i] > 0) {
+          average_height += distances[i];
+          count++;
+        }
+      }
+      if (count > 0) {
+        average_height /= count;
+      }
+      if (count > 4)
+      {
+        printf("average height: %d\n", average_height);
+      }
       judge_buffer.emplace_back(distances, confidences);
       if (judge_buffer.size() > 10) {
         judge_buffer.pop_front();
